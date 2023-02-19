@@ -4,6 +4,9 @@ include("$(PORT_DIR)/boards/manifest.py")
 # uasyncio
 include("$(MPY_DIR)/extmod/uasyncio")
 
+# mqtt_as
+freeze("$(MPY_DIR)/extmod/mqtt_as", "mqtt_as.py")
+
 # drivers
 require("ssd1306")
 
