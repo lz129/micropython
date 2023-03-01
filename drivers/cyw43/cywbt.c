@@ -35,8 +35,7 @@
 
 #if MICROPY_PY_NETWORK_CYW43
 
-extern const char fw_4343WA1_7_45_98_50_start;
-#define CYWBT_FW_ADDR (&fw_4343WA1_7_45_98_50_start + 749 * 512 + 29 * 256)
+#include "lib/cyw43-driver/firmware/cyw43_btfw_4343A1.h"
 
 // Provided by the port.
 extern pyb_uart_obj_t mp_bluetooth_hci_uart_obj;
@@ -159,8 +158,8 @@ STATIC int cywbt_download_firmware(const uint8_t *firmware) {
     #endif
 
     mp_bluetooth_hci_uart_set_baudrate(115200);
-    cywbt_set_baudrate(3000000);
-    mp_bluetooth_hci_uart_set_baudrate(3000000);
+    cywbt_set_baudrate(MICROPY_HW_BLE_UART_BAUDRATE_SECONDARY);
+    mp_bluetooth_hci_uart_set_baudrate(MICROPY_HW_BLE_UART_BAUDRATE_SECONDARY);
 
     return 0;
 }
@@ -192,10 +191,10 @@ int mp_bluetooth_hci_controller_init(void) {
     cywbt_hci_cmd(0x03, 0x0003, 0, NULL);
 
     // Change baudrate
-    cywbt_set_baudrate(3000000);
-    mp_bluetooth_hci_uart_set_baudrate(3000000);
+    cywbt_set_baudrate(MICROPY_HW_BLE_UART_BAUDRATE_SECONDARY);
+    mp_bluetooth_hci_uart_set_baudrate(MICROPY_HW_BLE_UART_BAUDRATE_SECONDARY);
 
-    cywbt_download_firmware((const uint8_t*)CYWBT_FW_ADDR);
+    cywbt_download_firmware((const uint8_t*)&cyw43_btfw_4343A1[0]);
 
     // Reset
     cywbt_hci_cmd(0x03, 0x0003, 0, NULL);
