@@ -32,6 +32,7 @@
 #include "py/mperrno.h"
 #include "py/mphal.h"
 #include "extmod/modnetwork.h"
+#include "extint.h"
 #include "pendsv.h"
 #include "sdio.h"
 
@@ -39,8 +40,14 @@
 #define CYW43_LWIP                      (1)
 #define CYW43_USE_STATS                 (0)
 
+#ifndef CYW43_CHIPSET_FIRMWARE_INCLUDE_FILE
 #define CYW43_CHIPSET_FIRMWARE_INCLUDE_FILE "lib/cyw43-driver/firmware/w4343WA1_7_45_98_50_combined.h"
+#endif
+
+#ifndef CYW43_WIFI_NVRAM_INCLUDE_FILE
 #define CYW43_WIFI_NVRAM_INCLUDE_FILE   "lib/cyw43-driver/firmware/wifi_nvram_1dx.h"
+#endif
+
 #define CYW43_IOCTL_TIMEOUT_US          (1000000)
 #define CYW43_SLEEP_MAX                 (50)
 #define CYW43_NETUTILS                  (1)
@@ -109,6 +116,12 @@ static inline void cyw43_delay_ms(uint32_t ms) {
     }
 }
 
+static inline void cyw43_hal_pin_config_irq_falling(cyw43_hal_pin_obj_t pin, int enable) {
+    if (enable) {
+        extint_set(pin, GPIO_MODE_IT_FALLING);
+    }
+}
+
 static inline void cyw43_sdio_init(void) {
     sdio_init(NVIC_EncodePriority(NVIC_PRIORITYGROUP_4, 14, 0));
 }
@@ -123,6 +136,10 @@ static inline void cyw43_sdio_deinit(void) {
 
 static inline void cyw43_sdio_set_irq(bool enable) {
     sdio_enable_irq(enable);
+}
+
+static inline void cyw43_sdio_enable_high_speed_4bit(void) {
+    sdio_enable_high_speed_4bit();
 }
 
 static inline int cyw43_sdio_transfer(uint32_t cmd, uint32_t arg, uint32_t *resp) {

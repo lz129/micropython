@@ -78,7 +78,7 @@ def do_disconnect(state, _args=None):
             state.pyb.exit_raw_repl()
     except OSError:
         # Ignore any OSError exceptions when shutting down, eg:
-        # - pyboard.filesystem_command will close the connecton if it had an error
+        # - pyboard.filesystem_command will close the connection if it had an error
         # - umounting will fail if serial port disappeared
         pass
     state.pyb.close()
@@ -122,9 +122,9 @@ def do_filesystem(state, args):
     if command == "cat":
         # Don't be verbose by default when using cat, so output can be
         # redirected to something.
-        verbose = args.verbose == True
+        verbose = args.verbose is True
     else:
-        verbose = args.verbose != False
+        verbose = args.verbose is not False
 
     if command == "cp" and args.recursive:
         if paths[-1] != ":":

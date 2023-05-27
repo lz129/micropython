@@ -7,6 +7,9 @@
 #define MICROPY_EMIT_THUMB              (1)
 #define MICROPY_EMIT_INLINE_THUMB       (1)
 
+// Python internal features
+#define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF  (1)
+
 #define MICROPY_FLOAT_IMPL              (MICROPY_FLOAT_IMPL_FLOAT)
 
 #ifndef MICROPY_PY_BUILTINS_COMPLEX
@@ -28,12 +31,6 @@
 #define MICROPY_PY_URANDOM_SEED_INIT_FUNC (trng_random_u32())
 unsigned long trng_random_u32(void);
 
-#ifndef MICROPY_PY_MACHINE_RTC
-#if MICROPY_HW_XOSC32K
-#define MICROPY_PY_MACHINE_RTC          (1)
-#endif
-#endif
-
 #ifndef MICROPY_PY_MACHINE_PIN_BOARD_CPU
 #define MICROPY_PY_MACHINE_PIN_BOARD_CPU (1)
 #endif
@@ -48,6 +45,9 @@ unsigned long trng_random_u32(void);
 
 #ifndef MICROPY_HW_UART_TXBUF
 #define MICROPY_HW_UART_TXBUF           (1)
+#endif
+#ifndef MICROPY_HW_UART_RTSCTS
+#define MICROPY_HW_UART_RTSCTS          (1)
 #endif
 
 #define CPU_FREQ                        (120000000)

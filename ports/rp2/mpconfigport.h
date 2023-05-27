@@ -36,8 +36,12 @@
 
 // Board and hardware specific configuration
 #define MICROPY_HW_MCU_NAME                     "RP2040"
+#ifndef MICROPY_HW_ENABLE_UART_REPL
 #define MICROPY_HW_ENABLE_UART_REPL             (0) // useful if there is no USB
+#endif
+#ifndef MICROPY_HW_ENABLE_USBDEV
 #define MICROPY_HW_ENABLE_USBDEV                (1)
+#endif
 
 #if MICROPY_HW_ENABLE_USBDEV
 // Enable USB-CDC serial port
@@ -70,7 +74,7 @@
 #define MICROPY_OPT_COMPUTED_GOTO               (1)
 
 // Python internal features
-#define MICROPY_TRACKED_ALLOC                   (MICROPY_SSL_MBEDTLS)
+#define MICROPY_TRACKED_ALLOC                   (MICROPY_SSL_MBEDTLS || MICROPY_BLUETOOTH_BTSTACK)
 #define MICROPY_READER_VFS                      (1)
 #define MICROPY_ENABLE_GC                       (1)
 #define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF  (1)
@@ -101,14 +105,15 @@
 #define MICROPY_PY_URE_MATCH_SPAN_START_END     (1)
 #define MICROPY_PY_UHASHLIB_SHA1                (1)
 #define MICROPY_PY_UCRYPTOLIB                   (1)
-#define MICROPY_PY_UTIME_MP_HAL                 (1)
+#define MICROPY_PY_UTIME_GMTIME_LOCALTIME_MKTIME (1)
+#define MICROPY_PY_UTIME_TIME_TIME_NS           (1)
+#define MICROPY_PY_UTIME_INCLUDEFILE            "ports/rp2/modutime.c"
 #define MICROPY_PY_URANDOM_SEED_INIT_FUNC       (rosc_random_u32())
 #define MICROPY_PY_MACHINE                      (1)
 #define MICROPY_PY_MACHINE_PIN_MAKE_NEW         mp_pin_make_new
 #define MICROPY_PY_MACHINE_BITSTREAM            (1)
 #define MICROPY_PY_MACHINE_PULSE                (1)
 #define MICROPY_PY_MACHINE_PWM                  (1)
-#define MICROPY_PY_MACHINE_PWM_DUTY_U16_NS      (1)
 #define MICROPY_PY_MACHINE_PWM_INCLUDEFILE      "ports/rp2/machine_pwm.c"
 #define MICROPY_PY_MACHINE_I2C                  (1)
 #define MICROPY_PY_MACHINE_SOFTI2C              (1)
@@ -201,6 +206,11 @@ extern const struct _mp_obj_type_t mod_network_nic_type_wiznet5k;
     MICROPY_HW_NIC_WIZNET5K \
     MICROPY_BOARD_NETWORK_INTERFACES \
 
+// Additional entries for use with pendsv_schedule_dispatch.
+#ifndef MICROPY_BOARD_PENDSV_ENTRIES
+#define MICROPY_BOARD_PENDSV_ENTRIES
+#endif
+
 #define MP_STATE_PORT MP_STATE_VM
 
 // Miscellaneous settings
@@ -210,6 +220,10 @@ extern const struct _mp_obj_type_t mod_network_nic_type_wiznet5k;
 #endif
 #ifndef MICROPY_HW_USB_PID
 #define MICROPY_HW_USB_PID (0x0005) // RP2 MicroPython
+#endif
+
+#ifndef MICROPY_HW_BOOTSEL_DELAY_US
+#define MICROPY_HW_BOOTSEL_DELAY_US 8
 #endif
 
 // Entering a critical section.

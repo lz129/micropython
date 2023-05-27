@@ -38,7 +38,7 @@
 #include "py/stream.h" // for mp_obj_print
 
 // Allocates an object and also sets type, for mp_obj_malloc{,_var} macros.
-void *mp_obj_malloc_helper(size_t num_bytes, const mp_obj_type_t *type) {
+MP_NOINLINE void *mp_obj_malloc_helper(size_t num_bytes, const mp_obj_type_t *type) {
     mp_obj_base_t *base = (mp_obj_base_t *)m_malloc(num_bytes);
     base->type = type;
     return base;
@@ -592,14 +592,5 @@ bool mp_get_buffer(mp_obj_t obj, mp_buffer_info_t *bufinfo, mp_uint_t flags) {
 void mp_get_buffer_raise(mp_obj_t obj, mp_buffer_info_t *bufinfo, mp_uint_t flags) {
     if (!mp_get_buffer(obj, bufinfo, flags)) {
         mp_raise_TypeError(MP_ERROR_TEXT("object with buffer protocol required"));
-    }
-}
-
-mp_obj_t mp_generic_unary_op(mp_unary_op_t op, mp_obj_t o_in) {
-    switch (op) {
-        case MP_UNARY_OP_HASH:
-            return MP_OBJ_NEW_SMALL_INT((mp_uint_t)o_in);
-        default:
-            return MP_OBJ_NULL;      // op not supported
     }
 }
