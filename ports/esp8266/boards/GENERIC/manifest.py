@@ -1,8 +1,8 @@
 # base modules
 include("$(PORT_DIR)/boards/manifest.py")
 
-# uasyncio
-include("$(MPY_DIR)/extmod/uasyncio")
+# asyncio
+include("$(MPY_DIR)/extmod/asyncio")
 
 # mqtt_as
 freeze("$(MPY_DIR)/extmod/mqtt_as", "mqtt_as.py")
