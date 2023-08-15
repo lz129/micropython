@@ -7,6 +7,8 @@ LD_FILES += boards/seeed_xiao_nrf52/XIAO_bootloader.ld boards/nrf52840_1M_256k.l
 
 NRF_DEFINES += -DNRF52840_XXAA
 
+FROZEN_MANIFEST ?= $(BOARD_DIR)/manifest.py
+
 MICROPY_VFS_LFS2 = 1
 FS_SIZE = 256k
 
