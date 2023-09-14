@@ -249,6 +249,7 @@ function ci_qemu_arm_build {
 
 function ci_renesas_ra_setup {
     ci_gcc_arm_setup
+    sudo apt-get install protobuf-c-compiler
 }
 
 function ci_renesas_ra_board_build {
@@ -259,6 +260,8 @@ function ci_renesas_ra_board_build {
     make ${MAKEOPTS} -C ports/renesas-ra BOARD=EK_RA6M1
     make ${MAKEOPTS} -C ports/renesas-ra BOARD=EK_RA4M1
     make ${MAKEOPTS} -C ports/renesas-ra BOARD=EK_RA4W1
+    make ${MAKEOPTS} -C ports/renesas-ra BOARD=ARDUINO_PORTENTA_C33 submodules
+    make ${MAKEOPTS} -C ports/renesas-ra BOARD=ARDUINO_PORTENTA_C33
 }
 
 ########################################################################################
@@ -425,6 +428,7 @@ function ci_native_mpy_modules_build {
     make -C examples/natmod/features1 ARCH=$arch
     make -C examples/natmod/features2 ARCH=$arch
     make -C examples/natmod/features3 ARCH=$arch
+    make -C examples/natmod/features4 ARCH=$arch
     make -C examples/natmod/btree ARCH=$arch
     make -C examples/natmod/deflate ARCH=$arch
     make -C examples/natmod/framebuf ARCH=$arch
