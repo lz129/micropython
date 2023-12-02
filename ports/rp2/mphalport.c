@@ -29,7 +29,10 @@
 #include "py/mphal.h"
 #include "extmod/misc.h"
 #include "shared/runtime/interrupt_char.h"
+#include "shared/runtime/softtimer.h"
 #include "shared/timeutils/timeutils.h"
+#include "shared/tinyusb/mp_usbd.h"
+#include "pendsv.h"
 #include "tusb.h"
 #include "uart.h"
 #include "hardware/rtc.h"
@@ -38,6 +41,12 @@
 #if MICROPY_PY_NETWORK_CYW43
 #include "lib/cyw43-driver/src/cyw43.h"
 #endif
+
+// This needs to be added to the result of time_us_64() to get the number of
+// microseconds since the Epoch.
+STATIC uint64_t time_us_64_offset_from_epoch;
+
+static alarm_id_t soft_timer_alarm_id = 0;
 
 #if MICROPY_HW_ENABLE_UART_REPL || MICROPY_HW_USB_CDC
 
@@ -48,6 +57,19 @@
 STATIC uint8_t stdin_ringbuf_array[MICROPY_HW_STDIN_BUFFER_LEN];
 ringbuf_t stdin_ringbuf = { stdin_ringbuf_array, sizeof(stdin_ringbuf_array) };
 
+#endif
+
+#if MICROPY_HW_USB_CDC
+// Explicitly run the USB stack in case the scheduler is locked (eg we are in an
+// interrupt handler) and there is in/out data pending on the USB CDC interface.
+#define MICROPY_EVENT_POLL_HOOK_WITH_USB \
+    do { \
+        MICROPY_EVENT_POLL_HOOK; \
+        mp_usbd_task(); \
+    } while (0)
+
+#else
+#define MICROPY_EVENT_POLL_HOOK_WITH_USB MICROPY_EVENT_POLL_HOOK
 #endif
 
 #if MICROPY_HW_USB_CDC
@@ -131,7 +153,7 @@ int mp_hal_stdin_rx_chr(void) {
             return dupterm_c;
         }
         #endif
-        MICROPY_EVENT_POLL_HOOK
+        MICROPY_EVENT_POLL_HOOK_WITH_USB;
     }
 }
 
@@ -151,7 +173,7 @@ void mp_hal_stdout_tx_strn(const char *str, mp_uint_t len) {
             int timeout = 0;
             // Wait with a max of USC_CDC_TIMEOUT ms
             while (n > tud_cdc_write_available() && timeout++ < MICROPY_HW_USB_CDC_TX_TIMEOUT) {
-                MICROPY_EVENT_POLL_HOOK
+                MICROPY_EVENT_POLL_HOOK_WITH_USB;
             }
             if (timeout >= MICROPY_HW_USB_CDC_TX_TIMEOUT) {
                 break;
@@ -170,17 +192,33 @@ void mp_hal_stdout_tx_strn(const char *str, mp_uint_t len) {
 
 void mp_hal_delay_ms(mp_uint_t ms) {
     absolute_time_t t = make_timeout_time_ms(ms);
-    while (!time_reached(t)) {
+    do {
         MICROPY_EVENT_POLL_HOOK_FAST;
-        best_effort_wfe_or_timeout(t);
-    }
+    } while (!best_effort_wfe_or_timeout(t));
+}
+
+void mp_hal_time_ns_set_from_rtc(void) {
+    // Delay at least one RTC clock cycle so it's registers have updated with the most
+    // recent time settings.
+    sleep_us(23);
+
+    // Sample RTC and time_us_64() as close together as possible, so the offset
+    // calculated for the latter can be as accurate as possible.
+    datetime_t t;
+    rtc_get_datetime(&t);
+    uint64_t us = time_us_64();
+
+    // Calculate the difference between the RTC Epoch seconds and time_us_64().
+    uint64_t s = timeutils_seconds_since_epoch(t.year, t.month, t.day, t.hour, t.min, t.sec);
+    time_us_64_offset_from_epoch = (uint64_t)s * 1000000ULL - us;
 }
 
 uint64_t mp_hal_time_ns(void) {
-    datetime_t t;
-    rtc_get_datetime(&t);
-    uint64_t s = timeutils_seconds_since_epoch(t.year, t.month, t.day, t.hour, t.min, t.sec);
-    return s * 1000000000ULL;
+    // The RTC only has seconds resolution, so instead use time_us_64() to get a more
+    // precise measure of Epoch time.  Both these "clocks" are clocked from the same
+    // source so they remain synchronised, and only differ by a fixed offset (calculated
+    // in mp_hal_time_ns_set_from_rtc).
+    return (time_us_64_offset_from_epoch + time_us_64()) * 1000ULL;
 }
 
 // Generate a random locally administered MAC address (LAA)
@@ -224,4 +262,23 @@ void mp_hal_get_mac_ascii(int idx, size_t chr_off, size_t chr_len, char *dest) {
 // Shouldn't be used, needed by cyw43-driver in debug build.
 uint32_t storage_read_blocks(uint8_t *dest, uint32_t block_num, uint32_t num_blocks) {
     panic_unsupported();
+}
+
+static int64_t soft_timer_callback(alarm_id_t id, void *user_data) {
+    soft_timer_alarm_id = 0;
+    pendsv_schedule_dispatch(PENDSV_DISPATCH_SOFT_TIMER, soft_timer_handler);
+    return 0; // don't reschedule this alarm
+}
+
+uint32_t soft_timer_get_ms(void) {
+    return mp_hal_ticks_ms();
+}
+
+void soft_timer_schedule_at_ms(uint32_t ticks_ms) {
+    if (soft_timer_alarm_id != 0) {
+        cancel_alarm(soft_timer_alarm_id);
+    }
+    int32_t ms = soft_timer_ticks_diff(ticks_ms, mp_hal_ticks_ms());
+    ms = MAX(0, ms);
+    soft_timer_alarm_id = add_alarm_in_ms(ms, soft_timer_callback, NULL, true);
 }

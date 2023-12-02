@@ -153,11 +153,14 @@ STATIC mp_uint_t vfs_posix_file_ioctl(mp_obj_t o_in, mp_uint_t request, uintptr_
     switch (request) {
         case MP_STREAM_FLUSH: {
             int ret;
-            // fsync(stdin/stdout/stderr) may fail with EINVAL (or ENOTSUP on macos),
-            // but don't propagate that error out.  Because data is not buffered by
-            // us, and stdin/out/err.flush() should just be a no-op.
-            #ifdef __APPLE__
+            // fsync(stdin/stdout/stderr) may fail with EINVAL (or ENOTSUP on macos or EBADF
+            // on windows), because the OS doesn't buffer these except for instance when they
+            // are redirected from/to file, but don't propagate that error out.  Because data
+            // is not buffered by us, and stdin/out/err.flush() should just be a no-op.
+            #if defined(__APPLE__)
             #define VFS_POSIX_STREAM_STDIO_ERR_CATCH (err == EINVAL || err == ENOTSUP)
+            #elif defined(_MSC_VER)
+            #define VFS_POSIX_STREAM_STDIO_ERR_CATCH (err == EINVAL || err == EBADF)
             #else
             #define VFS_POSIX_STREAM_STDIO_ERR_CATCH (err == EINVAL)
             #endif
@@ -276,14 +279,14 @@ STATIC const mp_stream_p_t vfs_posix_textio_stream_p = {
 
 #if MICROPY_PY_SYS_STDIO_BUFFER
 
-const mp_obj_vfs_posix_file_t mp_sys_stdin_buffer_obj = {{&mp_type_vfs_posix_fileio}, STDIN_FILENO};
-const mp_obj_vfs_posix_file_t mp_sys_stdout_buffer_obj = {{&mp_type_vfs_posix_fileio}, STDOUT_FILENO};
-const mp_obj_vfs_posix_file_t mp_sys_stderr_buffer_obj = {{&mp_type_vfs_posix_fileio}, STDERR_FILENO};
+mp_obj_vfs_posix_file_t mp_sys_stdin_buffer_obj = {{&mp_type_vfs_posix_fileio}, STDIN_FILENO};
+mp_obj_vfs_posix_file_t mp_sys_stdout_buffer_obj = {{&mp_type_vfs_posix_fileio}, STDOUT_FILENO};
+mp_obj_vfs_posix_file_t mp_sys_stderr_buffer_obj = {{&mp_type_vfs_posix_fileio}, STDERR_FILENO};
 
 // Forward declarations.
-const mp_obj_vfs_posix_file_t mp_sys_stdin_obj;
-const mp_obj_vfs_posix_file_t mp_sys_stdout_obj;
-const mp_obj_vfs_posix_file_t mp_sys_stderr_obj;
+mp_obj_vfs_posix_file_t mp_sys_stdin_obj;
+mp_obj_vfs_posix_file_t mp_sys_stdout_obj;
+mp_obj_vfs_posix_file_t mp_sys_stderr_obj;
 
 STATIC void vfs_posix_textio_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     if (dest[0] != MP_OBJ_NULL) {
@@ -329,8 +332,8 @@ MP_DEFINE_CONST_OBJ_TYPE(
     locals_dict, &vfs_posix_rawfile_locals_dict
     );
 
-const mp_obj_vfs_posix_file_t mp_sys_stdin_obj = {{&mp_type_vfs_posix_textio}, STDIN_FILENO};
-const mp_obj_vfs_posix_file_t mp_sys_stdout_obj = {{&mp_type_vfs_posix_textio}, STDOUT_FILENO};
-const mp_obj_vfs_posix_file_t mp_sys_stderr_obj = {{&mp_type_vfs_posix_textio}, STDERR_FILENO};
+mp_obj_vfs_posix_file_t mp_sys_stdin_obj = {{&mp_type_vfs_posix_textio}, STDIN_FILENO};
+mp_obj_vfs_posix_file_t mp_sys_stdout_obj = {{&mp_type_vfs_posix_textio}, STDOUT_FILENO};
+mp_obj_vfs_posix_file_t mp_sys_stderr_obj = {{&mp_type_vfs_posix_textio}, STDERR_FILENO};
 
 #endif // MICROPY_VFS_POSIX
