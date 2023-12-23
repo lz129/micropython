@@ -98,6 +98,7 @@
 #define MICROPY_PY_OS_INCLUDEFILE               "ports/rp2/modos.c"
 #ifndef MICROPY_PY_OS_DUPTERM
 #define MICROPY_PY_OS_DUPTERM                   (1)
+#define MICROPY_PY_OS_DUPTERM_NOTIFY            (1)
 #endif
 #define MICROPY_PY_OS_SYNC                      (1)
 #define MICROPY_PY_OS_UNAME                     (1)
@@ -249,17 +250,18 @@ extern const struct _mp_obj_type_t mod_network_nic_type_wiznet5k;
 #define MICROPY_PY_LWIP_REENTER lwip_lock_acquire();
 #define MICROPY_PY_LWIP_EXIT    lwip_lock_release();
 
-#define MICROPY_EVENT_POLL_HOOK_FAST \
-    do { \
-        extern void mp_handle_pending(bool); \
-        mp_handle_pending(true); \
+// Port level Wait-for-Event macro
+//
+// Do not use this macro directly, include py/runtime.h and
+// call mp_event_wait_indefinite() or mp_event_wait_ms(timeout)
+#define MICROPY_INTERNAL_WFE(TIMEOUT_MS) \
+    do {                                 \
+        if ((TIMEOUT_MS) < 0) { \
+            __wfe(); \
+        } else { \
+            best_effort_wfe_or_timeout(make_timeout_time_ms(TIMEOUT_MS)); \
+        } \
     } while (0)
-
-#define MICROPY_EVENT_POLL_HOOK \
-    do { \
-        MICROPY_EVENT_POLL_HOOK_FAST; \
-        __wfe(); \
-    } while (0);
 
 #define MICROPY_MAKE_POINTER_CALLABLE(p) ((void *)((mp_uint_t)(p) | 1))
 
