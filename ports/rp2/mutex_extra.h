@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2022-2023 Damien P. George
+ * Copyright (c) 2023 Damien P. George
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,20 +23,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef MICROPY_INCLUDED_RP2_MUTEX_EXTRA_H
+#define MICROPY_INCLUDED_RP2_MUTEX_EXTRA_H
 
-#include <stdint.h>
+#include "pico/mutex.h"
 
-// Type definitions for the specific machine
+uint32_t mutex_enter_blocking_and_disable_interrupts(mutex_t *mtx);
+void mutex_exit_and_restore_interrupts(mutex_t *mtx, uint32_t save);
 
-typedef intptr_t mp_int_t; // must be pointer size
-typedef uintptr_t mp_uint_t; // must be pointer size
-typedef long mp_off_t;
-
-// Need to provide a declaration/definition of alloca()
-#if defined(__FreeBSD__) || defined(__NetBSD__)
-#include <stdlib.h>
-#else
-#include <alloca.h>
-#endif
-
-#define MICROPY_MPHALPORT_H "port/mphalport.h"
+#endif // MICROPY_INCLUDED_RP2_MUTEX_EXTRA_H
