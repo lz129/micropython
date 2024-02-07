@@ -1,18 +1,20 @@
-# Basic test of ssl.SSLContext get_ciphers() and set_ciphers() methods.
+# Basic test of tls.SSLContext get_ciphers() and set_ciphers() methods.
 
 try:
-    import ssl
+    import tls
 except ImportError:
     print("SKIP")
     raise SystemExit
 
 
-ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+ctx = tls.SSLContext(tls.PROTOCOL_TLS_CLIENT)
 
 ciphers = ctx.get_ciphers()
 
 for ci in ciphers:
-    print(ci)
+    # Only print those ciphers know to exist on all ports.
+    if ("TLS-ECDHE-ECDSA-WITH-AES" in ci or "TLS-RSA-WITH-AES" in ci) and "CBC" in ci:
+        print(ci)
 
 ctx.set_ciphers(ciphers[:1])
 
