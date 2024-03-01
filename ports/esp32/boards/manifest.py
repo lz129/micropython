@@ -21,3 +21,7 @@ require("onewire")
 require("umqtt.robust")
 require("umqtt.simple")
 require("upysh")
+
+package("primitives", base_path="$(MPY_DIR)/lib/micropython-async/v3")
+package("threadsafe", base_path="$(MPY_DIR)/lib/micropython-async/v3")
+
