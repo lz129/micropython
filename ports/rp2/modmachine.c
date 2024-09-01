@@ -31,7 +31,7 @@
 #include "mp_usbd.h"
 #include "modmachine.h"
 #include "uart.h"
-#include "hardware/clocks.h"
+#include "clocks_extra.h"
 #include "hardware/pll.h"
 #include "hardware/structs/rosc.h"
 #include "hardware/structs/scb.h"
@@ -96,6 +96,20 @@ static void mp_machine_set_freq(size_t n_args, const mp_obj_t *args) {
     if (!set_sys_clock_khz(freq / 1000, false)) {
         mp_raise_ValueError(MP_ERROR_TEXT("cannot change frequency"));
     }
+    if (n_args > 1) {
+        mp_int_t freq_peri = mp_obj_get_int(args[1]);
+        if (freq_peri != (USB_CLK_KHZ * KHZ)) {
+            if (freq_peri == freq) {
+                clock_configure(clk_peri,
+                    0,
+                    CLOCKS_CLK_PERI_CTRL_AUXSRC_VALUE_CLKSRC_PLL_SYS,
+                    freq,
+                    freq);
+            } else {
+                mp_raise_ValueError(MP_ERROR_TEXT("peripheral freq must be 48_000_000 or the same as the MCU freq"));
+            }
+        }
+    }
     #if MICROPY_HW_ENABLE_UART_REPL
     setup_default_uart();
     mp_uart_init();
@@ -103,7 +117,7 @@ static void mp_machine_set_freq(size_t n_args, const mp_obj_t *args) {
 }
 
 static void mp_machine_idle(void) {
-    __wfe();
+    MICROPY_INTERNAL_WFE(1);
 }
 
 static void mp_machine_lightsleep(size_t n_args, const mp_obj_t *args) {
@@ -138,7 +152,8 @@ static void mp_machine_lightsleep(size_t n_args, const mp_obj_t *args) {
 
     #if MICROPY_HW_ENABLE_USBDEV
     // Only disable the USB clock if a USB host has not configured the device
-    bool disable_usb = !tud_mounted();
+    // or if going to DORMANT mode.
+    bool disable_usb = !(tud_mounted() && n_args > 0);
     #else
     bool disable_usb = true;
     #endif
@@ -213,7 +228,7 @@ static void mp_machine_lightsleep(size_t n_args, const mp_obj_t *args) {
     rosc_hw->ctrl = ROSC_CTRL_ENABLE_VALUE_ENABLE << ROSC_CTRL_ENABLE_LSB;
 
     // Bring back all clocks.
-    clocks_init();
+    clocks_init_optional_usb(disable_usb);
     MICROPY_END_ATOMIC_SECTION(my_interrupts);
 }
 
