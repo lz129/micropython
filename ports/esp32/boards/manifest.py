@@ -1,8 +1,6 @@
 freeze("$(PORT_DIR)/modules")
 include("$(MPY_DIR)/extmod/asyncio")
-
-# mqtt_as
-freeze("$(MPY_DIR)/extmod/mqtt_as", "mqtt_as.py")
+include("$(MPY_DIR)/extmod/mqtt_as")
 
 # drivers
 require("ssd1306")
