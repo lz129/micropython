@@ -9,6 +9,8 @@ require("bundle-networking")
 
 #equire("micropython-mqtt", library="micropython-mqtt")
 package("mqtt_as", base_path="$(MPY_DIR)/extmod/micropython-mqtt")
+package("primitives", base_path="$(MPY_DIR)/extmod/micropython-async/v3")
+package("threadsafe", base_path="$(MPY_DIR)/extmod/micropython-async/v3")
 
 
 # Require some micropython-lib modules.

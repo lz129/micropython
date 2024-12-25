@@ -71,3 +71,6 @@
 [submodule "extmod/micropython-mqtt"]
 	path = extmod/micropython-mqtt
 	url = git@github.com:peterhinch/micropython-mqtt.git
+[submodule "extmod/micropython-async"]
+	path = extmod/micropython-async
+	url = git@github.com:peterhinch/micropython-async.git
