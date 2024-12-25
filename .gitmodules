@@ -68,3 +68,6 @@
 [submodule "lib/arduino-lib"]
 	path = lib/arduino-lib
 	url = https://github.com/arduino/arduino-lib-mpy.git
+[submodule "extmod/micropython-mqtt"]
+	path = extmod/micropython-mqtt
+	url = git@github.com:peterhinch/micropython-mqtt.git
